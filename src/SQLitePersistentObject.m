@@ -247,11 +247,11 @@ NSMutableArray *checkedTables;
 			id oneItem = [objectMap objectForKey:memoryMapKey];
 			if (oneItem)
 			{
-				[ret addObject:[oneItem retain]];
+				[ret addObject:oneItem];
 				continue;
 			}
 			
-			oneItem = [[[self class] alloc] init];
+			oneItem = [[[[self class] alloc] init] autorelease];
 			[oneItem setPk:pk];
 			[[self class] registerObjectInMemory:oneItem];			
 			
@@ -536,7 +536,6 @@ NSMutableArray *checkedTables;
 			[oneItem makeClean];
 			
 			[ret addObject:oneItem];
-			[oneItem release];
 		}
 		sqlite3_finalize(statement);
 	}
