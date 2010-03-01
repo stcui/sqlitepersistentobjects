@@ -70,8 +70,8 @@
  Find by criteria lets you specify the SQL conditions that will be used. The string passed in should start with the word WHERE. So, to search for a value with a pk value of 1, you would pass in @"WHERE pk = 1". When comparing to strings, the string comparison must be in single-quotes like this @"WHERE name = 'smith'".
  */
 +(NSArray *)findByCriteria:(NSString *)criteriaString, ...;
-+(id)findFirstByCriteria:(NSString *)criteriaString, ...;
-+(id)findByPK:(int)inPk;
++(SQLitePersistentObject *)findFirstByCriteria:(NSString *)criteriaString, ...;
++(SQLitePersistentObject *)findByPK:(int)inPk;
 +(NSArray *)allObjects;
 
 /*!
@@ -152,22 +152,6 @@
  Indicates whether this object has ever been saved to the database. It does not indicate that the data matches what's in the database, just that there is a corresponding row
  */
 -(BOOL) existsInDB;
-
-/*
- Initializes an object of the given class, and sets it's properties to the key-value pairs
- found in the provided NSDictionary.
- 
- Example:
-  [[SQLitePersistentObjectSubclass alloc] initWithDictionary:[NSDictionary dictionaryWithObjectsAndKeys:
-                                                      @"value1", @"propertyOne",
-                                                      @"value2", @"propertyTwo",
-                                                      nil];
- 
- Constrained by the type of objects allowed as values in an NSDictionary.
- Returns the object that was initialized.
-*/
-+(id)objectWithDictionary:(NSDictionary *)dictionary;
--(id)initWithDictionary:(NSDictionary *)dictionary;
 
 /*!
  Saves this object's current data to the database. If it has never been saved before, it will assign a primary key value based on the database contents. Scalar values (ints, floats, doubles, etc.) will be stored in appropriate database columns, objects will be stored using the SQLitePersistence protocol methods - objects that don't implement that protocol will be archived into the database. Collection clases will be stored in child cross-reference tables that serve double duty. Any object they contain that is a subclass of SQLItePersistentObject will be stored as a foreign key to the appropriate table, otherwise objects will be stored in a column according to SQLitePersistence. Currently, collection classes inside collection classes are simply serialized into the x-ref table, which works, but is not the most efficient means. 

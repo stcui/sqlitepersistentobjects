@@ -104,6 +104,7 @@ static id findByMethodImp(id self, SEL _cmd, id value)
 - (BOOL)isDirty;
 @end
 @interface SQLitePersistentObject (private_memory)
++ (NSString *)memoryMapKeyForObject:(NSInteger)thePK;
 + (void)registerObjectInMemory:(SQLitePersistentObject *)theObject;
 + (void)unregisterObject:(SQLitePersistentObject *)theObject;
 - (NSString *)memoryMapKey;
@@ -156,7 +157,7 @@ NSMutableArray *checkedTables;
 	return [NSMutableArray array];
 }
 
-+(id)findFirstByCriteria:(NSString *)criteriaString, ...
++(SQLitePersistentObject *)findFirstByCriteria:(NSString *)criteriaString, ...
 {
 	// Added variadic ability to all criteria accepting methods -SLyons (10/03/2009)
 	va_list argumentList;
@@ -216,7 +217,7 @@ NSMutableArray *checkedTables;
 	[objToDelete deleteObjectCascade:cascade];
 	
 }
-+(id)findByPK:(int)inPk
++(SQLitePersistentObject *)findByPK:(int)inPk
 {
 	return [self findFirstByCriteria:[NSString stringWithFormat:@"WHERE pk = %d", inPk]];
 }
@@ -241,26 +242,18 @@ NSMutableArray *checkedTables;
 	{
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			BOOL foundInMemory = NO;
-			id oneItem = [[[self class] alloc] init];
-			
-			[oneItem setPk:sqlite3_column_int(statement, 0)];
-			NSString *mapKey = [oneItem memoryMapKey];
-			if ([[objectMap allKeys] containsObject:mapKey])
+			int pk = sqlite3_column_int(statement, 0);
+			NSString* memoryMapKey = [[self class] memoryMapKeyForObject:pk];
+			id oneItem = [objectMap objectForKey:memoryMapKey];
+			if (oneItem)
 			{
-				SQLitePersistentObject *testObject = [objectMap objectForKey:mapKey];
-				if (testObject != nil)
-				{
-					[oneItem release];
-					[ret addObject: [testObject retain] ];
-					foundInMemory = YES;
-				}
+				[ret addObject:[oneItem retain]];
+				continue;
 			}
 			
-			if(foundInMemory)
-				continue;
-			
-			[[self class] registerObjectInMemory:oneItem];
+			oneItem = [[[self class] alloc] init];
+			[oneItem setPk:pk];
+			[[self class] registerObjectInMemory:oneItem];			
 			
 			int i;
 			for (i=0; i <  sqlite3_column_count(statement); i++)
@@ -689,23 +682,6 @@ NSMutableArray *checkedTables;
 }
 #pragma mark -
 #pragma mark Public Instance Methods
-+(id)objectWithDictionary:(NSDictionary *)dictionary
-{
-  return [[self alloc] initWithDictionary:dictionary];
-}
--(id)initWithDictionary:(NSDictionary *)dictionary
-{
-  if (self = [self init]) {
-    NSString *propertyName, *firstLetter, *remaingLetters, *selectorName;
-    for (propertyName in dictionary) {
-      firstLetter = [[propertyName substringToIndex:1] capitalizedString];
-      remaingLetters = [propertyName substringFromIndex:1];
-      selectorName = [NSString stringWithFormat:@"set%@%@:", firstLetter, remaingLetters];
-      [self performSelector:NSSelectorFromString(selectorName) withObject:[dictionary objectForKey:propertyName]];
-    }
-  }
-  return self;  
-}
 -(int)pk
 {
 	return pk;
