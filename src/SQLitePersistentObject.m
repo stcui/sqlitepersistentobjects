@@ -1170,6 +1170,30 @@ NSMutableArray *checkedTables;
 	}
 	alreadyDeleting = FALSE;
 }
+-(void)deleteForeignObjects:(Class)cls
+{
+  [cls deleteObjectsByCriteria:@"%@ = '%@'", [[self class] tableName], [self memoryMapKey]];
+}
++(void)deleteObjectsByCriteria:(NSString*)criteriaString, ...
+{
+  NSString* q = [NSString stringWithFormat:@"DELETE FROM %@", [[self class] tableName]];
+  sqlite3 *database = [[SQLiteInstanceManager sharedManager] database];
+	char *errmsg = NULL;
+
+  if (criteriaString)
+  {
+    va_list argumentList;
+    va_start(argumentList, criteriaString);
+    NSString* criteria = [[NSString alloc] initWithFormat:criteriaString arguments:argumentList];
+    q = [q stringByAppendingFormat:@" WHERE %@", criteria];
+    [criteria release];
+  }
+  if (sqlite3_exec (database, [q UTF8String], NULL, NULL, &errmsg) != SQLITE_OK)
+  {
+    NSLog(@"Error deleting from table: %s", errmsg);
+  }
+  sqlite3_free(errmsg);
+}
 
 - (NSArray *)findRelated:(Class)cls forProperty:(NSString *)prop filter:(NSString *)filter, ...
 {

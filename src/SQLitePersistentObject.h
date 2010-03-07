@@ -104,7 +104,9 @@
  Deletes this object's corresponding row from the database table. This version does NOT cascade to child objects in other tables.
  */
 -(void)deleteObject;
+-(void)deleteForeignObjects:(Class)cls;
 +(void)deleteObject:(NSInteger)pk cascade:(BOOL)cascade;
++(void)deleteObjectsByCriteria:(NSString*)criteriaString, ...;
 
 /*!
  Deletes this object's corresponding row from the database table.
