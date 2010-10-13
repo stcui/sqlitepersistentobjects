@@ -377,7 +377,6 @@ NSMutableArray *checkedTables;
 						if (isNSSetType(className))
 						{
 							NSMutableSet *set = [NSMutableSet set];
-							[oneItem setValue:set forKey:propName];
 							/*
 							 parent_pk INTEGER, fk INTEGER, fk_table_name TEXT, object_data TEXT
 							 */
@@ -424,11 +423,12 @@ NSMutableArray *checkedTables;
 								}
 							}
 							sqlite3_finalize(setStmt);
+							
+							[oneItem setValue:set forKey:propName];
 						}
 						else if (isNSArrayType(className))
 						{
 							NSMutableArray *array = [NSMutableArray array];
-							[oneItem setValue:array forKey:propName];
 							
 							NSString *arrayQuery = [NSString stringWithFormat:@"SELECT fk, fk_table_name, object_data, object_class FROM %@_%@ WHERE parent_pk = %d order by array_index", [[self class] tableName], [propName stringAsSQLColumnName], [oneItem pk]];
 							sqlite3_stmt *arrayStmt;
@@ -475,11 +475,12 @@ NSMutableArray *checkedTables;
 								}
 							}
 							sqlite3_finalize(arrayStmt);
+							
+							[oneItem setValue:array forKey:propName];
 						}
 						else if (isNSDictionaryType(className))
 						{
 							NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-							[oneItem setValue:dictionary forKey:propName];
 							/* parent_pk integer, dictionary_key TEXT, fk INTEGER, fk_table_name TEXT, object_data BLOB, object_class  */
 							
 							NSString *dictionaryQuery = [NSString stringWithFormat:@"SELECT dictionary_key, fk, fk_table_name, object_data, object_class FROM %@_%@ WHERE parent_pk = %d", [[self class] tableName], [propName stringAsSQLColumnName], [oneItem pk]];
@@ -529,6 +530,8 @@ NSMutableArray *checkedTables;
 								}
 							}
 							sqlite3_finalize(dictionaryStmt);
+							
+							[oneItem setValue:dictionary forKey:propName];
 						}
 					}
 				}
