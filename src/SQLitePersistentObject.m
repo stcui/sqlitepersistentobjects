@@ -366,8 +366,12 @@ NSMutableArray *checkedTables;
 			}
 			
 			// Loop through properties and look for collections classes
+            NSArray *theTransients = [[self class] transients];
 			for (NSString *propName in theProps)
 			{
+                if ([theTransients containsObject:propName])
+                    continue;
+
 				NSString *propType = [theProps objectForKey:propName];
 				if ([propType hasPrefix:@"@"])
 				{
