@@ -83,6 +83,10 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 	if (first || database == NULL)
 	{
 		first = NO;
+#if DEBUG
+        NSLog(@">> SQLitePersistence Database: %@",[self databaseFilepath]);
+#endif
+        
 		if (!sqlite3_open([[self databaseFilepath] UTF8String], &database) == SQLITE_OK) 
 		{
 			// Even though the open failed, call close to properly clean up resources.
