@@ -36,7 +36,7 @@ static int MethodSort(const void *a, const void *b) {
 
 @interface UIApplication (iPhoneUnitTestAdditions)
 // "Private" method that we need
-- (void)terminate;
+- (void)terminateWithSuccess;
 @end
 
 @implementation GTMIPhoneUnitTestDelegate
@@ -60,7 +60,7 @@ static int MethodSort(const void *a, const void *b) {
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
   [self runTests];
   // Using private call to end our tests
-  [[UIApplication sharedApplication] terminate];
+  [[UIApplication sharedApplication] terminateWithSuccess];
 }
 
 // Run through all the registered classes and run test methods on any

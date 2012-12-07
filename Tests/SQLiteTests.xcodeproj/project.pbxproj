@@ -36,6 +36,7 @@
 		61992A200F47F9650052219A /* SQLitePersistentObject.m in Sources */ = {isa = PBXBuildFile; fileRef = 61992A100F47F9650052219A /* SQLitePersistentObject.m */; };
 		61992A210F47F9650052219A /* UIImage-SQLitePersistence.m in Sources */ = {isa = PBXBuildFile; fileRef = 61992A120F47F9650052219A /* UIImage-SQLitePersistence.m */; };
 		61A08F6B0F7DC002005362D4 /* SQLitePersistentObject-Testing.m in Sources */ = {isa = PBXBuildFile; fileRef = 61A08F6A0F7DC002005362D4 /* SQLitePersistentObject-Testing.m */; };
+		69B3BE3B1671EA53004305BF /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 69B3BE3A1671EA53004305BF /* Default-568h@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		61992A120F47F9650052219A /* UIImage-SQLitePersistence.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage-SQLitePersistence.m"; sourceTree = "<group>"; };
 		61A08F690F7DC002005362D4 /* SQLitePersistentObject-Testing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "SQLitePersistentObject-Testing.h"; path = "Classes/SQLitePersistentObject-Testing.h"; sourceTree = "<group>"; };
 		61A08F6A0F7DC002005362D4 /* SQLitePersistentObject-Testing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "SQLitePersistentObject-Testing.m"; path = "Classes/SQLitePersistentObject-Testing.m"; sourceTree = "<group>"; };
+		69B3BE3A1671EA53004305BF /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,10 +113,10 @@
 		00A18ECE0EE9460F0065BA6B /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				37D35B9B0F67EAF300EEFFDF /* TestVariadicMethods.m */,
-				377D48B30F58AAE3007D613B /* TestReversion.m */,
 				00DC746C0F22F391000D1CC6 /* TestDeleting.m */,
+				377D48B30F58AAE3007D613B /* TestReversion.m */,
 				00A625000F1F472A00696BD9 /* TestSavingAndLoading.m */,
+				37D35B9B0F67EAF300EEFFDF /* TestVariadicMethods.m */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -122,12 +124,12 @@
 		00A25A210F20670B00C867AC /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
-				00DC74690F22F388000D1CC6 /* NestedCollections.h */,
-				00DC746A0F22F388000D1CC6 /* NestedCollections.m */,
 				009E38DE0F208B3C0002814F /* BasicData.h */,
 				009E38DF0F208B3C0002814F /* BasicData.m */,
 				009E38E00F208B3C0002814F /* Collections.h */,
 				009E38E10F208B3C0002814F /* Collections.m */,
+				00DC74690F22F388000D1CC6 /* NestedCollections.h */,
+				00DC746A0F22F388000D1CC6 /* NestedCollections.m */,
 				009E38E20F208B3C0002814F /* NSDataContainer.h */,
 				009E38E30F208B3C0002814F /* NSDataContainer.m */,
 				009E38E40F208B3C0002814F /* RecursiveReferential.h */,
@@ -167,6 +169,7 @@
 				00A9303A0EE67579001CBD74 /* Unit Testing Framework */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
+				69B3BE3A1671EA53004305BF /* Default-568h@2x.png */,
 				00A1DD4D0EE91804007EC1A7 /* UnitTest-Info.plist */,
 			);
 			name = CustomTemplate;
@@ -254,7 +257,11 @@
 			isa = PBXProject;
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "SQLiteTests" */;
 			compatibilityVersion = "Xcode 3.1";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* CustomTemplate */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -269,6 +276,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69B3BE3B1671EA53004305BF /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,7 +344,6 @@
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../Library/Frameworks\"",
 					"\"$(SRCROOT)\"",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -345,10 +352,7 @@
 				GCC_PREFIX_HEADER = SQLiteTests_Prefix.pch;
 				INFOPLIST_FILE = "UnitTest-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../Library/Frameworks/OCMock.framework\"",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -357,7 +361,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = UnitTest;
-				SDKROOT = iphoneos2.1;
+				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
@@ -370,7 +374,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../Library/Frameworks\"",
 					"\"$(SRCROOT)\"",
 				);
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
@@ -378,10 +381,7 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/UIKit.framework/Headers/UIKit.h";
 				INFOPLIST_FILE = "UnitTest-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../Library/Frameworks/OCMock.framework\"",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -390,7 +390,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = UnitTest;
-				SDKROOT = iphoneos2.1;
+				SDKROOT = iphoneos;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -402,9 +402,10 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
-				SDKROOT = iphoneos2.2;
+				SDKROOT = iphoneos;
 			};
 			name = Debug;
 		};
@@ -416,8 +417,9 @@
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
 				PREBINDING = NO;
-				SDKROOT = iphoneos2.1;
+				SDKROOT = iphoneos;
 			};
 			name = Release;
 		};

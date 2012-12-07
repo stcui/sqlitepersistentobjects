@@ -101,7 +101,7 @@
 		if (sqlite3_step(statement) == SQLITE_ROW) 
 		{
 			NSString *indexName = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
-			if ([expectedIndex isEqualTo:indexName])
+			if ([expectedIndex isEqualToString:indexName])
 				expectedIndexFound = YES;
 		}
 	}			
