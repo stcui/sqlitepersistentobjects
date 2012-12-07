@@ -7,7 +7,7 @@
 #import "PostInvalid.h"
 #import "SQLiteInstanceManager.h"
 
-#define LOG(x, ...) { printf([[NSString stringWithFormat:x,##__VA_ARGS__] UTF8String]); printf("\n"); }
+#define LOG(x, ...) { printf("%s", [[NSString stringWithFormat:x,##__VA_ARGS__] UTF8String]); printf("\n"); }
 
 void reset_environment()
 {
@@ -60,8 +60,8 @@ void show_table(NSString *t)
 void show_objects(Class cls)
 {
 	NSArray *a = [cls allObjects];
-	LOG(@"* Requested objects for class %@, %d returned:", cls, [a count]);
-	for(id *o in a) {
+	LOG(@"* Requested objects for class %@, %ld returned:", cls, [a count]);
+	for(id o in a) {
 		LOG(@"\t%@", o);
 	}
 }

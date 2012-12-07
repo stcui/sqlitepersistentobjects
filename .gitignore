@@ -1,1 +1,8 @@
 build/
+Sample Code/SimpleConsoleText/CMakeFiles
+Sample Code/SimpleConsoleText/CMakeScripts
+CMakeCache.txt
+cmake_install.cmake
+Sample Code/SimpleConsoleText/ConsoleTest.xcodeproj
+Sample Code/SimpleConsoleText/ConsoleTest.build
+Sample Code/SimpleConsoleText/Debug
