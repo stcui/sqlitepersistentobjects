@@ -82,6 +82,57 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 }
 #pragma mark -
 #pragma mark Public Instance Methods
+-(void)pragmasOnOpen {
+    // Default to UTF-8 encoding
+    [self executeUpdateSQL:@"PRAGMA encoding = \"UTF-8\""];
+
+    // Turn on full auto-vacuuming to keep the size of the database down
+    // This setting can be changed per database using the setAutoVacuum instance method
+    [self executeUpdateSQL:@"PRAGMA auto_vacuum=1"];
+
+    // Set cache size to zero. This will prevent performance slowdowns as the
+    // database gets larger
+    [self executeUpdateSQL:@"PRAGMA CACHE_SIZE=0"];
+}
+
+- (BOOL)rekey:(NSString*)key {
+#ifdef SQLITE_HAS_CODEC
+    if (!key) {
+        return NO;
+    }
+
+    int rc = sqlite3_rekey(_db, [key UTF8String], (int)strlen([key UTF8String]));
+
+    if (rc != SQLITE_OK) {
+        NSLog(@"error on rekey: %d", rc);
+        NSLog(@"%@", [self lastErrorMessage]);
+    }
+
+    return (rc == SQLITE_OK);
+#else
+    return NO;
+#endif
+}
+
+-(BOOL)setKey:(NSString *)key {
+#ifdef SQLITE_HAS_CODEC
+    if (!key) {
+        return NO;
+    }
+
+    int rc = sqlite3_key(self.database, [key UTF8String], (int)strlen([key UTF8String]));
+    if (rc != SQLITE_OK) {
+        NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(database));
+        return NO;
+    }
+
+    [self pragmasOnOpen];
+    return YES;
+#else
+    return NO;
+#endif
+}
+
 -(sqlite3 *)database
 {
 	static BOOL first = YES;
@@ -99,20 +150,12 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 			NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(database));
 			sqlite3_close(database);
 		}
+#ifndef SQLITE_HAS_CODEC
 		else
 		{
-			// Default to UTF-8 encoding
-			[self executeUpdateSQL:@"PRAGMA encoding = \"UTF-8\""];
-			
-			// Turn on full auto-vacuuming to keep the size of the database down
-			// This setting can be changed per database using the setAutoVacuum instance method
-			[self executeUpdateSQL:@"PRAGMA auto_vacuum=1"];
-            
-            // Set cache size to zero. This will prevent performance slowdowns as the
-            // database gets larger
-            [self executeUpdateSQL:@"PRAGMA CACHE_SIZE=0"];
-			
+			[self pragmasOnOpen];
 		}
+#endif
 	}
 	return database;
 }
