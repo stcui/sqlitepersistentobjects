@@ -18,6 +18,8 @@
 // included Readme.txt file
 // ----------------------------------------------------------------------
 
+#import <TargetConditionals.h>
+
 #import "SQLiteInstanceManager.h"
 #import "SQLitePersistentObject.h"
 
@@ -62,7 +64,11 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 {
 	return self;
 }
+#if TARGET_OS_IPHONE
 - (unsigned)retainCount
+#else
+- (unsigned long)retainCount
+#endif
 {
 	return UINT_MAX;  //denotes an object that cannot be released
 }
@@ -130,7 +136,7 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 }
 - (void)setCacheSize:(NSUInteger)pages
 {
-	NSString *updateSQL = [NSString stringWithFormat:@"PRAGMA cache_size=%d", pages];
+	NSString *updateSQL = [NSString stringWithFormat:@"PRAGMA cache_size=%ld", (unsigned long)pages];
 	[self executeUpdateSQL:updateSQL];
 }
 - (void)setLockingMode:(SQLITE3LockingMode)mode
