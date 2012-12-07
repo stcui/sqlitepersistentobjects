@@ -101,11 +101,11 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
         return NO;
     }
 
-    int rc = sqlite3_rekey(_db, [key UTF8String], (int)strlen([key UTF8String]));
+    int rc = sqlite3_rekey(self.database, [key UTF8String], (int)strlen([key UTF8String]));
 
     if (rc != SQLITE_OK) {
         NSLog(@"error on rekey: %d", rc);
-        NSLog(@"%@", [self lastErrorMessage]);
+        NSLog(@"%s", sqlite3_errmsg(self.database));
     }
 
     return (rc == SQLITE_OK);
@@ -122,7 +122,7 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 
     int rc = sqlite3_key(self.database, [key UTF8String], (int)strlen([key UTF8String]));
     if (rc != SQLITE_OK) {
-        NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(database));
+        NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(self.database));
         return NO;
     }
 
