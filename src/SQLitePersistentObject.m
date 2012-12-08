@@ -1348,6 +1348,10 @@ NSMutableArray *checkedTables;
 - (void)dealloc 
 {
 	[[self class] unregisterObject:self];
+    
+    for (NSString *oneProp in [[self class] propertiesWithEncodedTypes])
+        [self removeObserver:self forKeyPath:oneProp];
+    
 	[super dealloc];
 }
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
