@@ -30,5 +30,5 @@
 @property(assign) NSMutableSet* dataSet;
 
 -(void) setFixtureData;
-
+- (void)setFixtureDataWithOutRelation;
 @end

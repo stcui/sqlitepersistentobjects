@@ -30,4 +30,7 @@
 @property(assign) NSNumber* transientNumber;
 @property(assign) NSDate* date;
 @property(assign) BasicData* basic;
+@property(strong, nonatomic) NSArray *basicObjects;
+-(void) setFixtureData;
+- (void)setFixtureDataWithOutRelation;
 @end

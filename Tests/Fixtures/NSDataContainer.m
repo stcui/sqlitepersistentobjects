@@ -63,12 +63,8 @@
 	[super dealloc];
 }
 
--(void) setFixtureData
+- (void)setFixtureDataWithOutRelation;
 {
-	for (int i=0; i<100; i++) 
-	{
-		unsignedArray[i] = rand() % 9999;
-	}
 	rect = CGRectMake(1, 2, 3, 4);
 	self.number = [NSNumber numberWithInt:1234];
 	self.date = [NSDate dateWithTimeIntervalSinceNow:0];
@@ -76,4 +72,15 @@
 	[self.basic setFixtureData];
 }
 
+- (void)setFixtureData
+{
+    [self setFixtureDataWithOutRelation];
+    NSMutableArray *objects = [NSMutableArray arrayWithCapacity:100];
+	for (int i=0; i<100; i++)
+	{
+		unsignedArray[i] = rand() % 9999;
+        [objects addObject:[[[BasicData alloc] init] autorelease]];
+	}
+    self.basicObjects = objects;
+}
 @end
