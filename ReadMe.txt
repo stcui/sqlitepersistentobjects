@@ -1,4 +1,4 @@
-SQLite Persistent Objects
+SQLite Persistent Objects with fmdb and multithread support
 Wouldn't it be nice if your Objective-C data objects just knew how to save and load themselves? It'd be nice if you could just call "save" and trust that your object would save itself properly somewhere, and that when you wanted to load it back in, you could just call a class method to retrieve the object or objects you wanted?
 
 Well, now you can. I've been talking about this project for a while, but it got put on hold for the book. I have now finished the first draft of the code. This is very much a beta release, but I am interested in feedback from people, so am releasing it. In the next release, I will provide more sample code and unit tests, and other niceties, but for this release, you just get the source code files and a little bit of information about how to use them.
