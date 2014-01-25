@@ -90,42 +90,37 @@
 
 - (void)assertIndex:(NSString *) expectedIndex forTable: (NSString *) tableName exists: (BOOL) indexExists
 {
-	sqlite3 *database = [_manager database];
+    FMDatabase *db = [_manager db];
 
 	BOOL expectedIndexFound = NO;
 	NSString *idxQuery = [NSString stringWithFormat:@"SELECT NAME,SQL FROM SQLITE_MASTER WHERE TBL_NAME='%@' AND TYPE='index'",
 						  tableName];
-	sqlite3_stmt *statement;
-	if (sqlite3_prepare_v2(database, [idxQuery UTF8String], -1, &statement, nil) == SQLITE_OK) 
-	{
-		if (sqlite3_step(statement) == SQLITE_ROW) 
-		{
-			NSString *indexName = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
-			if ([expectedIndex isEqualToString:indexName])
-				expectedIndexFound = YES;
-		}
-	}			
+    FMResultSet *result = [db executeQuery:idxQuery];
+    while (result.next) {
+        NSString *indexName = [result stringForColumnIndex:0];
+        if ([expectedIndex isEqualToString:indexName]) {
+            expectedIndexFound = YES;
+        }
+    }
+	[result close];
 	STAssertTrue(expectedIndexFound == indexExists, @"Failed to find expected index '%@'", expectedIndex);	
 }
 
 - (void)assertTransient:(NSString *) columnName forTable: (NSString *) tableName
 {
-	sqlite3 *database = [_manager database];
+	FMDatabase *database = [_manager db];
 	
 	BOOL transientConfirmed = NO;
 	NSString *idxQuery = [NSString stringWithFormat:@"SELECT SQL FROM SQLITE_MASTER WHERE NAME='%@' AND TYPE='table'",
 						  tableName];
-	sqlite3_stmt *statement;
-	if (sqlite3_prepare_v2(database, [idxQuery UTF8String], -1, &statement, nil) == SQLITE_OK) 
-	{
-		if (sqlite3_step(statement) == SQLITE_ROW) 
-		{
-			NSString *createSql = [NSString stringWithUTF8String:(char *)sqlite3_column_text(statement, 0)];
-			NSRange rangeOfStr = [createSql rangeOfString:[columnName stringAsSQLColumnName]];
-			if (rangeOfStr.location == NSNotFound)
-				transientConfirmed = YES;
-		}
-	}			
+    FMResultSet *result = [database executeQuery:idxQuery];
+    if (result.next) {
+        NSString *createSql = [result stringForColumnIndex:0];
+        NSRange rangeOfStr = [createSql rangeOfString:[columnName stringAsSQLColumnName]];
+        if (rangeOfStr.location == NSNotFound)
+            transientConfirmed = YES;
+    }
+    [result close];
 	STAssertTrue(transientConfirmed == YES, @"Transient property '%@' found as column '%@' on database table '%@'", columnName,[columnName stringAsSQLColumnName], tableName);	
 }
 

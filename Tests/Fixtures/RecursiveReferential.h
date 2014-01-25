@@ -14,5 +14,5 @@
 	RecursiveReferential*	ref;
 }
 
-@property(assign) RecursiveReferential* ref;
+@property(unsafe_unretained) RecursiveReferential* ref;
 @end

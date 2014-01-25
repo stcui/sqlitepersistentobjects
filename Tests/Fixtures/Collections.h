@@ -21,14 +21,14 @@
 	NSMutableSet*			dataSet;	
 }
 
-@property(assign) NSMutableArray* stringsArray;
-@property(assign) NSMutableDictionary* stringsDict;
-@property(assign) NSMutableSet* stringsSet;
+@property(strong) NSMutableArray* stringsArray;
+@property(strong) NSMutableDictionary* stringsDict;
+@property(strong) NSMutableSet* stringsSet;
 
-@property(assign) NSMutableArray* dataArray;
-@property(assign) NSMutableDictionary* dataDict;
-@property(assign) NSMutableSet* dataSet;
+@property(strong) NSMutableArray* dataArray;
+@property(strong) NSMutableDictionary* dataDict;
+@property(strong) NSMutableSet* dataSet;
 
 -(void) setFixtureData;
-- (void)setFixtureDataWithOutRelation;
+
 @end

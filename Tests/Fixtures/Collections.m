@@ -15,15 +15,27 @@
 
 -(id) init
 {
-	[super init];
-	stringsArray = [[NSMutableArray alloc] init];
-	stringsDict = [[NSMutableDictionary alloc] init];
-	stringsSet = [[NSMutableSet alloc] init];
-	
-	dataArray = [[NSMutableArray alloc] init];
-	dataDict = [[NSMutableDictionary alloc] init];
-	dataSet = [[NSMutableSet alloc] init];	
+	if (self = [super init]) {
+        stringsArray = [[NSMutableArray alloc] init];
+        stringsDict = [[NSMutableDictionary alloc] init];
+        stringsSet = [[NSMutableSet alloc] init];
+        
+        dataArray = [[NSMutableArray alloc] init];
+        dataDict = [[NSMutableDictionary alloc] init];
+        dataSet = [[NSMutableSet alloc] init];
+    }
 	return self;
+}
+
+- (void)dealloc
+{
+    self.stringsArray = nil;
+    self.stringsDict = nil;
+    self.stringsSet = nil;
+    self.dataArray = nil;
+    self.dataDict = nil;
+    self.dataSet = nil;
+    [super dealloc];
 }
 
 -(void) setFixtureData
@@ -36,7 +48,7 @@
 		NSString* string = [NSString stringWithUTF8String:buffer];
 		
 		[self.stringsArray addObject:string];
-		[self.stringsDict setObject:string forKey:string];
+		[self.stringsDict setObject:string forKey:[string copy]];
 		[self.stringsSet addObject:string];
 		
 		

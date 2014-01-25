@@ -24,15 +24,10 @@
 
 -(BOOL) sqliteStatementReturnsData:(NSString*)sql
 {
-	sqlite3_stmt *statement;
-	if (sqlite3_prepare_v2( [_manager database], [sql UTF8String], -1, &statement, NULL) == SQLITE_OK)
-	{
-		if (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			return TRUE;
-		}
-	}
-	return FALSE;
+    FMResultSet *result = [[_manager db] executeQuery:sql];
+    BOOL ret = result.next && result.hasAnotherRow;
+    [result close];
+    return ret;
 }
 
 extern NSMutableArray* recursionCheck;

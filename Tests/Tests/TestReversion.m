@@ -56,7 +56,6 @@
    [col setFixtureData];
    [col save];
    
-   [col.stringsArray release];
    col.stringsArray = nil;
    [col revert];
    STAssertTrue(col.stringsArray != nil, @"Collections in revert method");

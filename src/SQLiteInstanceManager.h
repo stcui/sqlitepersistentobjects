@@ -32,6 +32,11 @@
 #import <objc/message.h>
 #endif
 
+#import "FMDatabase.h"
+#import "FMDatabaseAdditions.h"
+#import "FMDatabaseQueue.h"
+#import "FMResultSet.h"
+
 typedef enum SQLITE3AutoVacuum
 {
 	kSQLITE3AutoVacuumNoAutoVacuum = 0,
@@ -50,13 +55,13 @@ typedef enum SQLITE3LockingMode
 
 	@private
 	NSString *databaseFilepath;
-	sqlite3 *database;
 }
 
 @property (nonatomic, readwrite,retain) NSString *databaseFilepath;
-
+@property (nonatomic, retain) FMDatabase *db;
+@property (nonatomic, strong) FMDatabaseQueue *queryQueue;
+@property (nonatomic, strong) FMDatabaseQueue *saveQueue;
 + (id)sharedManager;
-- (sqlite3 *)database;
 - (BOOL)tableExists:(NSString *)tableName;
 - (void)setAutoVacuum:(SQLITE3AutoVacuum)mode;
 - (void)setCacheSize:(NSUInteger)pages;
@@ -64,7 +69,11 @@ typedef enum SQLITE3LockingMode
 - (void)deleteDatabase;
 - (void)vacuum;
 - (void)executeUpdateSQL:(NSString *) updateSQL;
-
+- (void)executeQuery:(NSString *)querySQL completion:(void(^)(FMResultSet *resultSet))completion;
 - (BOOL)rekey:(NSString*)key;
 - (BOOL)setKey:(NSString *)key;
+@end
+
+@interface FMResultSet (ArrayExt)
+- (NSArray *)toArray;
 @end

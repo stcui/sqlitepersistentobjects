@@ -23,7 +23,6 @@
 #import "SQLiteInstanceManager.h"
 #import "SQLitePersistentObject.h"
 
-static SQLiteInstanceManager *sharedSQLiteManager = nil;
 
 #pragma mark Private Method Declarations
 @interface SQLiteInstanceManager (private)
@@ -31,54 +30,31 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 @end
 
 @implementation SQLiteInstanceManager
-
+{
+    NSArray *queues;
+    NSMutableArray *opCount;
+}
 @synthesize databaseFilepath;
 
 #pragma mark -
 #pragma mark Singleton Methods
 + (id)sharedManager 
 {
-	@synchronized(self) 
-	{
-		if (sharedSQLiteManager == nil) 
-			[[self alloc] init]; 
-	}
+    static SQLiteInstanceManager *sharedSQLiteManager = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedSQLiteManager = [[self alloc] init];
+    });
+	
 	return sharedSQLiteManager;
 }
-+ (id)allocWithZone:(NSZone *)zone
+
+- (id)init
 {
-	@synchronized(self) {
-		if (sharedSQLiteManager == nil) 
-		{
-			sharedSQLiteManager = [super allocWithZone:zone];
-			return sharedSQLiteManager; 
-		}
-	}
-	return nil;
-}
-- (id)copyWithZone:(NSZone *)zone
-{
-	return self;
-}
-- (id)retain
-{
-	return self;
-}
-#if TARGET_OS_IPHONE
-- (unsigned)retainCount
-#else
-- (unsigned long)retainCount
-#endif
-{
-	return UINT_MAX;  //denotes an object that cannot be released
-}
-- (oneway void)release
-{
-	// never release
-}
-- (id)autorelease
-{
-	return self;
+    self = [super init];
+    if (self) {
+    }
+    return self;
 }
 #pragma mark -
 #pragma mark Public Instance Methods
@@ -100,15 +76,9 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
     if (!key) {
         return NO;
     }
+    BOOL result = [[self db] rekey:key];
 
-    int rc = sqlite3_rekey(self.database, [key UTF8String], (int)strlen([key UTF8String]));
-
-    if (rc != SQLITE_OK) {
-        NSLog(@"error on rekey: %d", rc);
-        NSLog(@"%s", sqlite3_errmsg(self.database));
-    }
-
-    return (rc == SQLITE_OK);
+    return result;
 #else
     return NO;
 #endif
@@ -119,59 +89,70 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
     if (!key) {
         return NO;
     }
-
-    int rc = sqlite3_key(self.database, [key UTF8String], (int)strlen([key UTF8String]));
-    if (rc != SQLITE_OK) {
-        NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(self.database));
-        return NO;
-    }
-
+    BOOL result = [[self db] setKey:key];
     [self pragmasOnOpen];
-    return YES;
+    return result;
 #else
     return NO;
 #endif
 }
 
--(sqlite3 *)database
+- (FMDatabase *)db
 {
-	static BOOL first = YES;
-	
-	if (first || database == NULL)
-	{
-		first = NO;
-#if DEBUG
-        NSLog(@">> SQLitePersistence Database: %@",[self databaseFilepath]);
-#endif
-        
-		if (!sqlite3_open([[self databaseFilepath] UTF8String], &database) == SQLITE_OK) 
-		{
-			// Even though the open failed, call close to properly clean up resources.
-			NSAssert1(0, @"Failed to open database with message '%s'.", sqlite3_errmsg(database));
-			sqlite3_close(database);
-		}
-#ifndef SQLITE_HAS_CODEC
-		else
-		{
-			[self pragmasOnOpen];
-		}
-#endif
-	}
-	return database;
+    @synchronized(self) {
+        if (!_db) {
+            _db = [[FMDatabase alloc] initWithPath:self.databaseFilepath];
+            [_db open];
+
+            // Default to UTF-8 encoding
+            [_db executeUpdate:@"PRAGMA encoding = \"UTF-8\""];
+            
+            // Turn on full auto-vacuuming to keep the size of the database down
+            // This setting can be changed per database using the setAutoVacuum instance method
+            [_db executeUpdate:@"PRAGMA auto_vacuum=1"];
+            
+            // Set cache size to zero. This will prevent performance slowdowns as the
+            // database gets larger
+            [_db executeUpdate:@"PRAGMA CACHE_SIZE=0"];
+        }
+        return _db;
+    }
+}
+
+- (FMDatabaseQueue *)queryQueue
+{
+    @synchronized(self) {
+        if (nil == _queryQueue) {
+            [self db];
+            _queryQueue = [[FMDatabaseQueue alloc] initWithPath:self.databaseFilepath];
+        }
+    }
+    return _queryQueue;
+}
+
+- (FMDatabaseQueue *)saveQueue
+{
+    @synchronized(self) {
+        if (nil == _saveQueue) {
+            [self db];
+            _saveQueue = [[FMDatabaseQueue alloc] initWithPath:self.databaseFilepath];
+        }
+    }
+    return _saveQueue;
 }
 - (BOOL)tableExists:(NSString *)tableName
 {
-	BOOL ret = NO;
 	// pragma table_info(i_c_project);
-	NSString *query = [NSString stringWithFormat:@"pragma table_info(%@);", tableName];
-	sqlite3_stmt *stmt;
-	if (sqlite3_prepare_v2( database,  [query UTF8String], -1, &stmt, nil) == SQLITE_OK) {
-		if (sqlite3_step(stmt) == SQLITE_ROW)
-			ret = YES;
-		sqlite3_finalize(stmt);
-	}
-	return ret;
+    NSString *query = [NSString stringWithFormat:@"pragma table_info(%@);", tableName];
+    __block BOOL hasData;
+    [[self queryQueue] inDatabase:^(FMDatabase *db) {
+       FMResultSet *result = [db executeQuery:query];
+        hasData = result.next;
+        [result close];
+    }];
+    return hasData;
 }
+
 - (void)setAutoVacuum:(SQLITE3AutoVacuum)mode
 {
 	NSString *updateSQL = [NSString stringWithFormat:@"PRAGMA auto_vacuum=%d", mode];
@@ -192,7 +173,12 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 	NSString* path = [self databaseFilepath];
 	NSFileManager* fm = [NSFileManager defaultManager];
 	[fm removeItemAtPath:path error:NULL];
-	database = NULL;
+    [_saveQueue close];
+    [_queryQueue close];
+    [_db close];
+    _db = nil;
+    _saveQueue = nil;
+    _queryQueue = nil;
 	[SQLitePersistentObject clearCache];
 }
 - (void)vacuum
@@ -201,19 +187,19 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 }
 - (void)executeUpdateSQL:(NSString *) updateSQL
 {
-	char *errorMsg;
-	if (sqlite3_exec([self database],[updateSQL UTF8String] , NULL, NULL, &errorMsg) != SQLITE_OK) {
-		NSString *errorMessage = [NSString stringWithFormat:@"Failed to execute SQL '%@' with message '%s'.", updateSQL, errorMsg];
-		NSAssert(0, errorMessage);
-		sqlite3_free(errorMsg);
+    if (![self.db executeUpdate:updateSQL]) {
+		NSLog(@"Failed to execute SQL '%@' with message '%@'.", updateSQL, self.db.lastError);
 	}
 }
-#pragma mark -
-- (void)dealloc
+- (void)executeQuery:(NSString *)querySQL completion:(void(^)(FMResultSet *resultSet))completion
 {
-	[databaseFilepath release];
-	[super dealloc];
+    [self.queryQueue inDatabase:^(FMDatabase *db) {
+        FMResultSet *result = [db executeQuery:querySQL];
+        if (completion) completion(result);
+        [result close];
+    }];
 }
+
 #pragma mark -
 #pragma mark Private Methods
 
@@ -237,17 +223,29 @@ static SQLiteInstanceManager *sharedSQLiteManager = nil;
 		NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : NSTemporaryDirectory();
 		NSString *saveDirectory = [basePath stringByAppendingPathComponent:appName];
 #else
-		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
 		NSString *saveDirectory = [paths objectAtIndex:0];
 #endif
 		NSString *saveFileName = [NSString stringWithFormat:@"%@.sqlite3", ret];
 		NSString *filepath = [saveDirectory stringByAppendingPathComponent:saveFileName];
 		
-		databaseFilepath = [filepath retain];
+		databaseFilepath = filepath;
 		
 		if (![[NSFileManager defaultManager] fileExistsAtPath:saveDirectory]) 
 			[[NSFileManager defaultManager] createDirectoryAtPath:saveDirectory withIntermediateDirectories:YES attributes:nil error:nil];
 	}
 	return databaseFilepath;
+}
+@end
+
+@implementation FMResultSet (ArrayExt)
+- (NSArray *)toArray
+{
+    NSMutableArray *array = [NSMutableArray arrayWithCapacity:16];
+    while (self.next) {
+        [array addObject:self.resultDictionary];
+    }
+    [self close];
+    return array;
 }
 @end

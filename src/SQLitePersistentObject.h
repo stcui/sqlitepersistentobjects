@@ -19,6 +19,7 @@
 // ----------------------------------------------------------------------
 
 #import <Foundation/Foundation.h>
+#import "FMDatabase.h"
 //#import "/usr/include/sqlite3.h"
 #import <sqlite3.h>
 
@@ -70,8 +71,8 @@
  Find by criteria lets you specify the SQL conditions that will be used. The string passed in should start with the word WHERE. So, to search for a value with a pk value of 1, you would pass in @"WHERE pk = 1". When comparing to strings, the string comparison must be in single-quotes like this @"WHERE name = 'smith'".
  */
 +(NSArray *)findByCriteria:(NSString *)criteriaString, ...;
-+(SQLitePersistentObject *)findFirstByCriteria:(NSString *)criteriaString, ...;
-+(SQLitePersistentObject *)findByPK:(int)inPk;
++(instancetype)findFirstByCriteria:(NSString *)criteriaString, ...;
++(instancetype)findByPK:(int)inPk;
 +(NSArray *)allObjects;
 
 /*!
@@ -98,7 +99,7 @@
 
 // This method returns a list of the names of thecolumns actually used in the database 
 // table backing this class. It's used to make sure that all properties have a corresponding column 
-+(NSArray *)tableColumns;
++(NSArray *)tableColumns:(FMDatabase*)db;
 
 /*!
  Deletes this object's corresponding row from the database table. This version does NOT cascade to child objects in other tables.
@@ -202,3 +203,4 @@
 #endif
 
 @end
+

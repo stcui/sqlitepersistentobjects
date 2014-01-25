@@ -24,12 +24,12 @@
 	BasicData*	basic;
 }
 
-@property(assign) NSData* unsignedArrayData;
-@property(assign) NSData* rectData;
-@property(assign) NSNumber* number;
-@property(assign) NSNumber* transientNumber;
-@property(assign) NSDate* date;
-@property(assign) BasicData* basic;
+@property(strong) NSData* unsignedArrayData;
+@property(strong) NSData* rectData;
+@property(strong) NSNumber* number;
+@property(strong) NSNumber* transientNumber;
+@property(strong) NSDate* date;
+@property(strong) BasicData* basic;
 @property(strong, nonatomic) NSArray *basicObjects;
 -(void) setFixtureData;
 - (void)setFixtureDataWithOutRelation;
