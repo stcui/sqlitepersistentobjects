@@ -23,35 +23,37 @@
 @implementation NSString(SQLiteColumnName)
 - (NSString *)stringAsSQLColumnName
 {
-	
 	NSMutableString *ret = [NSMutableString string];
-	for (int i=0; i < [self length]; i++)
+    CFStringRef cfStr = (CFStringRef)self;
+    NSUInteger length = [self length];
+	for (CFIndex i=0; i < length; i++)
 	{
-		NSRange sRange = NSMakeRange(i,1);
-		NSString *oneChar = [self substringWithRange:sRange];
-		if ([oneChar isEqualToString:[oneChar uppercaseString]] && i > 0)
-			[ret appendFormat:@"_%@", [oneChar lowercaseString]];
-		else
-			[ret appendString:[oneChar lowercaseString]];
+        UniChar ch = CFStringGetCharacterAtIndex(cfStr, i);
+        if ((ch == toupper(ch)) && i > 0) {
+			[ret appendFormat:@"_%c", ch];
+		} else {
+			[ret appendFormat:@"%c", ch];
+        }
 	}
 	return ret;
 }
 - (NSString *)stringAsPropertyString
 {
 	BOOL lastWasUnderscore = NO;
+    CFStringRef cfStr = (CFStringRef)self;
 	NSMutableString *ret = [NSMutableString string];
-	for (int i=0; i < [self length]; i++)
+    NSUInteger length = self.length;
+    
+	for (CFIndex i=0; i < length; i++)
 	{
-		NSRange sRange = NSMakeRange(i,1);
-		NSString *oneChar = [self substringWithRange:sRange];
-		if ([oneChar isEqualToString:@"_"])
+        UniChar ch = CFStringGetCharacterAtIndex(cfStr, i);
+		if (ch == '_') {
 			lastWasUnderscore = YES;
-		else
-		{
+		} else {
 			if (lastWasUnderscore)
-				[ret appendString:[oneChar uppercaseString]];
+				[ret appendFormat:@"%c", toupper(ch)];
 			else
-				[ret appendString:oneChar];
+				[ret appendFormat:@"%c", ch];
 			
 			lastWasUnderscore = NO;
 		}
