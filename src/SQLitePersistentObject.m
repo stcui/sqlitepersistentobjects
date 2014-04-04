@@ -811,8 +811,8 @@ static dispatch_queue_t getQueue()
                             [oneObject _save:db];
                             NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
                             
-                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, array_index, fk, fk_table_name) values (%d, %d, %d, '%@')", tableName,  pk, arrayIndex++, [oneObject pk], [[oneObject class] tableName]];
-                            if (![db executeUpdate:xrefInsert]) {
+                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, array_index, fk, fk_table_name) values (?, ?, ?, ?)", tableName];
+                            if (![db executeUpdate:xrefInsert, @(pk), @(arrayIndex++), @([oneObject pk]), [[oneObject class] tableName]]) {
                                 NSLog(@"Error inserting child rows in xref table for array: %@", db.lastError);
                             }
                         }
@@ -821,8 +821,8 @@ static dispatch_queue_t getQueue()
                             if ([[oneObject class] canBeStoredInSQLite])
                             {
                                 NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
-                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, array_index, object_data, object_class) values (%d, %d, ?, '%@')", tableName, pk, arrayIndex++, [oneObject className]];
-                                NSMutableArray *params = [NSMutableArray arrayWithCapacity:2];
+                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, array_index, object_data, object_class) values (?, ?, ?, ?)", tableName];//, pk, arrayIndex++, [oneObject className]];
+                                NSMutableArray *params = [NSMutableArray arrayWithObjects:@(pk), @(arrayIndex++), nil];
                                 if ([[oneObject class] shouldBeStoredInBlob])
                                 {
                                     NSData *data = [oneObject sqlBlobRepresentationOfSelf];
@@ -832,6 +832,7 @@ static dispatch_queue_t getQueue()
                                 {
                                     [params addObject:[oneObject sqlColumnRepresentationOfSelf]];
                                 }
+                                [params addObject:[oneObject className]];
                                 if (![db executeUpdate:xrefInsert withArgumentsInArray:params]) {
                                     NSLog(@"Error inserting or updating cross-reference row: %@", [db lastError]);
                                 }
@@ -850,25 +851,23 @@ static dispatch_queue_t getQueue()
                         {
                             [(SQLitePersistentObject *)oneObject _save:db];
                             NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
-                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, dictionary_key, fk, fk_table_name) values (%d, '%@', %d, '%@')",  tableName, pk, oneKey, [(SQLitePersistentObject *)oneObject pk], [[oneObject class] tableName]];
-                            if (![db executeUpdate:xrefInsert]) {
+                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, dictionary_key, fk, fk_table_name) values (?, ?, ?, ?)",  tableName];
+                            if (![db executeUpdate:xrefInsert, @(pk), oneKey, @([oneObject pk]), [[oneObject class] tableName]]) {
                                 NSLog(@"Error inserting child rows in xref table for array: %@", db.lastError);
                             }
                         } else {
                             if ([[oneObject class] canBeStoredInSQLite])
                             {
                                 NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
-                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@(parent_pk, dictionary_key, object_data, object_class) values (%d, '%@', ?, '%@')", tableName, pk, oneKey, [oneObject className]];
-                                NSMutableArray *params = [NSMutableArray arrayWithCapacity:1];
-                                
-                                if ([[oneObject class] shouldBeStoredInBlob])
-                                {
+                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@(parent_pk, dictionary_key, object_data, object_class) values (?, ?, ?, ?)", tableName];//, pk, oneKey, [oneObject className]];
+                                NSMutableArray *params = [NSMutableArray arrayWithArray:@[@(pk), oneKey]];
+                                if ([[oneObject class] shouldBeStoredInBlob]) {
                                     NSData *data = [oneObject sqlBlobRepresentationOfSelf];
                                     [params addObject:data];
                                 } else {
                                     [params addObject:[oneObject sqlColumnRepresentationOfSelf]];
                                 }
-                                
+                                [params addObject:[oneObject className]];
                                 if (![db executeUpdate:xrefInsert withArgumentsInArray:params]) {
                                     NSLog(@"Error inserting or updating cross-reference row: %@", db.lastError);
                                 }
@@ -884,16 +883,17 @@ static dispatch_queue_t getQueue()
                         {
                             [oneObject _save:db];
                             NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
-                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, fk, fk_table_name) values (%d, ?, '%@')", tableName,  pk, [[oneObject class] tableName]];
-                            if (![db executeUpdate:xrefInsert, [oneObject sqlBlobRepresentationOfSelf]]) {
+                            NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, fk, fk_table_name) values (?, ?, ?)", tableName];
+                            NSArray *params = @[@(pk), [oneObject sqlBlobRepresentationOfSelf], [[oneObject class] tableName]];
+                            if (![db executeUpdate:xrefInsert withArgumentsInArray:params]) {
                                 NSLog(@"Error inserting child rows in xref table for array: %@", db.lastError);
                             }
                         } else {
                             if ([[oneObject class] canBeStoredInSQLite])
                             {
                                 NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
-                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, object_data, object_class) values (%d,  ?, '%@')", tableName, pk, [oneObject className]];
-                                NSMutableArray *params = [NSMutableArray arrayWithCapacity:1];
+                                NSString *xrefInsert = [NSString stringWithFormat:@"insert into %@ (parent_pk, object_data, object_class) values (?, ?, ?)", tableName];
+                                NSMutableArray *params = [NSMutableArray arrayWithObject:@(pk)];
                                 
                                 if ([[oneObject class] shouldBeStoredInBlob])
                                 {
@@ -902,10 +902,10 @@ static dispatch_queue_t getQueue()
                                 } else {
                                     [params addObject:[oneObject sqlColumnRepresentationOfSelf]];
                                 }
+                                [params addObject:[oneObject className]];
                                 if (![db executeUpdate:xrefInsert withArgumentsInArray:params]) {
                                     NSLog(@"Error inserting or updating cross-reference row: %@", db.lastError);
                                 }
-                                
                             } else {
                                 NSLog(@"Could not save object from set");
                             }
