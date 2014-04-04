@@ -103,6 +103,20 @@ static int integerValue(id object) {
     return [object intValue];
 }
 
+static int cmpAscending(const void *a, const void *b) {
+    char ch1 = *(char*)a;
+    char ch2 = *(char*)b;
+    if (ch1 < ch2) return -1;
+    if (ch1 > ch2) return 1;
+    return 0;
+}
+
+static BOOL isSqliteIntegerType(char propType) __attribute__((const));
+static BOOL isSqliteUnsignedIntegerType(char propType) __attribute__((const));
+static BOOL isSqliteSignedIntegerOrBooleanType(char propType) __attribute__((const));
+static BOOL isSqliteRealType(char propType) __attribute__((const));
+static BOOL isSqliteCharType(char propType) __attribute__((const));
+static BOOL isScalarType(char propType) __attribute__((const));
 
 @interface SQLitePersistentObject (private)
 + (void)tableCheck:(FMDatabase *)db;
@@ -113,6 +127,13 @@ static int integerValue(id object) {
 - (void)markDirty;
 - (BOOL)isDirty;
 @end
+
+static inline BOOL isObjectDirty(SQLitePersistentObject *object) {
+    BOOL ret = [object isKindOfClass:[SQLitePersistentObject class]] && [object isDirty];
+    return ret;
+}
+
+
 @interface SQLitePersistentObject (private_memory)
 + (NSString *)memoryMapKeyForObject:(NSInteger)thePK;
 + (void)registerObjectInMemory:(SQLitePersistentObject *)theObject;
@@ -290,30 +311,17 @@ static dispatch_queue_t getQueue()
                     if (colType == nil) {
                         break;
                     }
-                    if ([colType isEqualToString:@"i"] || // int
-                        [colType isEqualToString:@"l"] || // long
-                        [colType isEqualToString:@"q"] || // long long
-                        [colType isEqualToString:@"s"] || // short
-                        [colType isEqualToString:@"B"] )  // bool or _Bool
-                    {
+                    char colTypeChar = (char)[colType characterAtIndex:0];
+                    if (isSqliteSignedIntegerOrBooleanType(colTypeChar)) {
                         NSNumber *colValue = @([value longLongValue]);
                         [oneItem setValue:colValue forKey:propName];
-                    } else if  ([colType isEqualToString:@"I"] || // unsigned int
-                                [colType isEqualToString:@"L"] || // usigned long
-                                [colType isEqualToString:@"Q"] || // unsigned long long
-                                [colType isEqualToString:@"S"]) // unsigned short
-                    {
+                    } else if  (isSqliteUnsignedIntegerType(colTypeChar)) {
                         NSNumber *colValue = @([value unsignedLongLongValue]);
                         [oneItem setValue:colValue forKey:propName];
-                    } else if ([colType isEqualToString:@"f"] || // float
-                               [colType isEqualToString:@"d"] )  // double
-                    {
+                    } else if (isSqliteRealType(colTypeChar)) {  // double
                         NSNumber *colVal = @([value doubleValue]);
                         [oneItem setValue:colVal forKey:propName];
-                    } else if ([colType isEqualToString:@"c"] ||	// char
-                               [colType isEqualToString:@"C"] ) // unsigned char
-                        
-                    {
+                    } else if (isSqliteCharType(colTypeChar)) { // unsigned char
                         NSString *colValString = value;//[result stringForColumnIndex:i];
                         
                         if (colValString) {
@@ -327,7 +335,7 @@ static dispatch_queue_t getQueue()
                                 [oneItem setValue:colValString forKey:propName];
                             }
                         }
-                    } else if ([colType hasPrefix:@"@"]) {
+                    } else if (colTypeChar == '@') {
                         NSString *className = [colType substringWithRange:NSMakeRange(2, [colType length]-3)];
                         Class propClass = objc_lookUpClass([className UTF8String]);
                         
@@ -353,7 +361,6 @@ static dispatch_queue_t getQueue()
                             if (columnText.length > 0) {
                                 colData = [propClass objectWithSqlColumnRepresentation:columnText];
                             }
-                            
                             [oneItem setValue:colData forKey:propName];
                         }
                     }
@@ -687,47 +694,45 @@ static dispatch_queue_t getQueue()
 					if ([[theProperty class] isSubclassOfClass:[SQLitePersistentObject class]])
 						if ([theProperty isDirty])
 							dirty = YES;
-				} else {
-					if (isNSSetType(className) || isNSArrayType(className)) {
-						for (id oneObject in (NSArray *)theProperty) {
-							if ([oneObject isKindOfClass:[SQLitePersistentObject class]]) {
-								if ([oneObject isDirty]) {
-									dirty = YES;
-								} else if (isNSDictionaryType(className)) {
-									for (id oneKey in [theProperty allKeys])
-									{
-										id oneObject = [theProperty objectForKey:oneKey];
-										if ([oneObject isKindOfClass:[SQLitePersistentObject class]])
-											if ([oneObject isDirty])
-												dirty = YES;
-									}
-								}
+				} else if (isNSSetType(className) || isNSArrayType(className)) {
+                    for (id oneObject in (NSArray *)theProperty) {
+                        if ([oneObject isKindOfClass:[SQLitePersistentObject class]]) {
+                            if ([oneObject isDirty]) {
+                                dirty = YES;
+                            } else if (isNSDictionaryType(className)) {
+                                [theProperty enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+                                    dirty = isObjectDirty(obj);
+                                    if (dirty) {
+                                        *stop = YES;
+                                    }
+                                }];
                             }
+                            if (dirty) break;
                         }
                     }
 				}
 			}
+            if (dirty) break;
 		}
     }
+    
     NSArray *theTransients = [[self class] transients];
-    if (dirty)
-    {
+    if (dirty) {
         dirty = NO;
-        //		sqlite3 *database = [[SQLiteInstanceManager sharedManager] database];
         // If this object is new, we need to figure out the correct primary key value,
         // which will be one higher than the current highest pk value in the table.
         
         if (pk < 0)
         {
-            NSString *pkQuery = [NSString stringWithFormat:@"SELECT SEQ FROM SQLITESEQUENCE WHERE NAME='%@'", [[self class] tableName]];
-            FMResultSet *result = [db executeQuery:pkQuery];
+            NSString *pkQuery = @"SELECT SEQ FROM SQLITESEQUENCE WHERE NAME=?";
+            FMResultSet *result = [db executeQuery:pkQuery, [[self class] tableName]];
             if (result.next) {
                 pk = [result intForColumnIndex:0] + 1;
             }
             [result close];
             if (result) {
-                NSString *seqIncrementQuery = [NSString stringWithFormat:@"UPDATE SQLITESEQUENCE set seq=%d WHERE name='%@'", pk, [[self class] tableName]];
-                if (![db executeUpdate:seqIncrementQuery]) {
+                NSString *seqIncrementQuery = @"UPDATE SQLITESEQUENCE set seq=? WHERE name=?";
+                if (![db executeUpdate:seqIncrementQuery, @(pk), [[self class] tableName]]) {
                     NSLog(@"Error Message: %@", [db lastError]);
                 }
             } else {
@@ -759,40 +764,23 @@ static dispatch_queue_t getQueue()
     NSMutableArray *paramsArray = [NSMutableArray arrayWithCapacity:16];
     
     [paramsArray addObject:@(pk)];
+    int dbg_count = 1;
     for (NSString *propName in props) {
-        if ([theTransients containsObject:propName]) continue;
+        if ([theTransients containsObject:propName]) {
+            continue;
+        }
         
         NSString *propType = [props objectForKey:propName];
+        char propTypeChar = (char)[propType characterAtIndex:0];
         NSString *className = propType;
         if ([propType hasPrefix:@"@"])
             className = [propType substringWithRange:NSMakeRange(2, [propType length]-3)];
         id theProperty = [self valueForKey:propName];
         if (theProperty == nil && ! (isCollectionType(className))) {
             [paramsArray addObject:[NSNull null]];
-        } else if ([propType isEqualToString:@"i"] || // int
-                 [propType isEqualToString:@"I"] || // unsigned int
-                 [propType isEqualToString:@"l"] || // long
-                 [propType isEqualToString:@"L"] || // usigned long
-                 [propType isEqualToString:@"q"] || // long long
-                 [propType isEqualToString:@"Q"] || // unsigned long long
-                 [propType isEqualToString:@"s"] || // short
-                 [propType isEqualToString:@"S"] || // unsigned short
-                 [propType isEqualToString:@"B"] || // bool or _Bool
-                 [propType isEqualToString:@"f"] || // float
-                 [propType isEqualToString:@"d"] )  // double
-        {
+        } else if (isScalarType(propTypeChar)) {  // integer / char / double / boolean
             [paramsArray addObject:[theProperty stringValue]];
-        }
-        else if ([propType isEqualToString:@"c"] ||	// char
-                 [propType isEqualToString:@"C"] ) // unsigned char
-            
-        {
-            NSString *theString = [theProperty stringValue];
-            [paramsArray addObject:theString];
-        }
-        else if ([propType hasPrefix:@"@"] ) // Object
-        {
-            NSString *className = [propType substringWithRange:NSMakeRange(2, [propType length]-3)];
+        } else if (propTypeChar ==  '@') { // Object
             if (! (isCollectionType(className)) ) {
                 if ([[theProperty class] isSubclassOfClass:[SQLitePersistentObject class]])
                 {
@@ -801,14 +789,10 @@ static dispatch_queue_t getQueue()
                 } else if ([[theProperty class] shouldBeStoredInBlob]){
                     NSData *data = [theProperty sqlBlobRepresentationOfSelf];
                     [paramsArray addObject:data];
-                }
-                else
-                {
+                } else {
                     [paramsArray addObject:[theProperty sqlColumnRepresentationOfSelf]];
                 }
-            }
-            else
-            {
+            } else {
                 // Too difficult to try and figure out what's changed, just wipe rows and re-insert the current data.
                 NSString *tableName = [NSString stringWithFormat:@"%@_%@", [[self class] tableName], [propName stringAsSQLColumnName]];
                 NSString *xrefDelete = [NSString stringWithFormat:@"delete from %@ where parent_pk = ?", tableName];
@@ -930,6 +914,8 @@ static dispatch_queue_t getQueue()
                 }
             }
         }
+        ++dbg_count;
+//        NSAssert(dbg_count == paramsArray.count, @"som");
     }
     if (![db executeUpdate:updateSQL withArgumentsInArray:paramsArray]) {
         NSLog(@"Error inserting or updating row");
@@ -1044,13 +1030,15 @@ static dispatch_queue_t getQueue()
 	[[self class] unregisterObject:self];
 	
 	NSString *deleteQuery = [NSString stringWithFormat:@"DELETE FROM %@ WHERE pk = ?", [[self class] tableName]];
+
+    
     void (^operation)(FMDatabase *db) = ^(FMDatabase *db) {
         if (![db executeUpdate:deleteQuery, @(pk)]) {
             NSLog(@"Error deleting row in table: %@", db.lastError);
         }
         
         NSDictionary *theProps = [[self class] propertiesWithEncodedTypes];
-        
+
         for (NSString *prop in [theProps allKeys])
         {
             NSString *colType = [theProps valueForKey:prop];
@@ -1398,31 +1386,22 @@ static dispatch_queue_t getQueue()
 			NSString *propName = [oneProp stringAsSQLColumnName];
 			
 			NSString *propType = [props objectForKey:oneProp];
+            unichar propTypeChar = [propType characterAtIndex:0];
+            
 			// Integer Types
-			if ([propType isEqualToString:@"i"] || // int
-				[propType isEqualToString:@"I"] || // unsigned int
-				[propType isEqualToString:@"l"] || // long
-				[propType isEqualToString:@"L"] || // usigned long
-				[propType isEqualToString:@"q"] || // long long
-				[propType isEqualToString:@"Q"] || // unsigned long long
-				[propType isEqualToString:@"s"] || // short
-				[propType isEqualToString:@"S"] ||  // unsigned short
-				[propType isEqualToString:@"B"] )   // bool or _Bool
-			{
+            if (isSqliteIntegerType(propTypeChar)) {
 				[createSQL appendFormat:@", %@ INTEGER", propName];
 			}
 			// Character Types
-			else if ([propType isEqualToString:@"c"] ||	// char
-					 [propType isEqualToString:@"C"] )  // unsigned char
-			{
+			else if (isSqliteCharType(propTypeChar)) {
 				[createSQL appendFormat:@", %@ TEXT", propName];
 			}
-			else if ([propType isEqualToString:@"f"] || // float
-					 [propType isEqualToString:@"d"] )  // double
+            // Real Types
+			else if (isSqliteRealType(propTypeChar))
 			{
 				[createSQL appendFormat:@", %@ REAL", propName];
 			}
-			else if ([propType hasPrefix:@"@"] ) // Object
+			else if (propTypeChar == '@') // Object
 			{
                 NSString *className = [propType substringWithRange:NSMakeRange(2, [propType length]-3)];
 				
@@ -1530,8 +1509,8 @@ static dispatch_queue_t getQueue()
 			{
 				// No underlying column - could be a collection
 				NSString *propType = [[[self class] propertiesWithEncodedTypes] objectForKey:oneProp];
-				if ([propType hasPrefix:@"@"])
-				{
+                char propTypeChar = [propType characterAtIndex:0];
+				if (propTypeChar == '@') {
 					NSString *className = [propType substringWithRange:NSMakeRange(2, [propType length]-3)];
 					if (isNSArrayType(className) || isNSDictionaryType(className) || isNSSetType(className))
 					{
@@ -1557,20 +1536,13 @@ static dispatch_queue_t getQueue()
 				{
 					// TODO: Refactor out the col-type for property type into a single method or inline function
 					NSString *colType = @"TEXT";
-					if ([propType isEqualToString:@"i"] || // int
-						[propType isEqualToString:@"I"] || // unsigned int
-						[propType isEqualToString:@"l"] || // long
-						[propType isEqualToString:@"L"] || // usigned long
-						[propType isEqualToString:@"q"] || // long long
-						[propType isEqualToString:@"Q"] || // unsigned long long
-						[propType isEqualToString:@"s"] || // short
-						[propType isEqualToString:@"S"] ||  // unsigned short
-						[propType isEqualToString:@"B"] )   // bool or _Bool
+					if (isSqliteIntegerType(propTypeChar)) {   // bool or _Bool
 						colType = @"INTEGER";
-					else if ([propType isEqualToString:@"f"] || // float
-							 [propType isEqualToString:@"d"] )  // double
+                    } else if (isSqliteRealType(propTypeChar)) {  // double
 						colType = @"REAL";
-					[db executeUpdate:@"alter table ? add column ? ?", [self tableName], propName, colType];
+                    }
+                    NSString *alterSQL = [NSString stringWithFormat:@"alter table %@ add column %@ %@", [self tableName], propName, colType];
+					[db executeUpdate:alterSQL];
 				}
 			}
 			
@@ -1633,3 +1605,40 @@ static dispatch_queue_t getQueue()
     }
 }
 @end
+
+
+static BOOL isSqliteIntegerType(char propType)
+{
+    static char set[] = "BILQSilqs";
+    char *result = bsearch(&propType, &set[0], strlen(set), sizeof(char), &cmpAscending);
+    return result != NULL;
+}
+
+static BOOL isSqliteSignedIntegerOrBooleanType(char propType)
+{
+    static char set[] = "Bilqs";
+    char *result = bsearch(&propType, set, strlen(set), sizeof(char), &cmpAscending);
+    return result != NULL;
+}
+
+static BOOL isSqliteUnsignedIntegerType(char propType) {
+    static char set[] = "ILQS";
+    char *result = bsearch(&propType, set, strlen(set), sizeof(char), &cmpAscending);
+    return result != NULL;
+}
+
+static BOOL isSqliteRealType(char propType)
+{
+    return propType == 'f' || propType == 'd';
+}
+
+static BOOL isSqliteCharType(char propType) {
+    return propType == 'c' || propType == 'C';
+}
+
+static BOOL isScalarType(char propType) {
+    static char set[] = "BCILQScdfilqs";
+    qsort(set, strlen(set), sizeof(char), &cmpAscending);
+    char *result = bsearch(&propType, set, strlen(set), sizeof(char), &cmpAscending);
+    return result != NULL;
+}

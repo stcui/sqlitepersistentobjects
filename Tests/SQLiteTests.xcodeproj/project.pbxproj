@@ -115,6 +115,12 @@
 		A0012E031893C34E0097BDB0 /* FMDatabase+InMemoryOnDiskIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "FMDatabase+InMemoryOnDiskIO.h"; sourceTree = "<group>"; };
 		A0012E041893C34E0097BDB0 /* FMDatabase+InMemoryOnDiskIO.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "FMDatabase+InMemoryOnDiskIO.m"; sourceTree = "<group>"; };
 		A016B4B21795476F00A1018A /* TestRelationship.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TestRelationship.m; path = Tests/TestRelationship.m; sourceTree = "<group>"; };
+		A0FCB1A418EE511A008B8E13 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		A0FCB1A718EE511A008B8E13 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+		A0FCB1AB18EE511A008B8E13 /* UnitTest Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "UnitTest Tests-Info.plist"; sourceTree = "<group>"; };
+		A0FCB1AD18EE511A008B8E13 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A0FCB1AF18EE511A008B8E13 /* UnitTest_Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UnitTest_Tests.m; sourceTree = "<group>"; };
+		A0FCB1B118EE511A008B8E13 /* UnitTest Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UnitTest Tests-Prefix.pch"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +195,7 @@
 				A0B63A6F1893A76900F7620F /* Vendor */,
 				00A18ECE0EE9460F0065BA6B /* Tests */,
 				00A9303A0EE67579001CBD74 /* Unit Testing Framework */,
+				A0FCB1A918EE511A008B8E13 /* UnitTest Tests */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 				69B3BE3A1671EA53004305BF /* Default-568h@2x.png */,
@@ -202,6 +209,8 @@
 			children = (
 				00B150930EFEF4280086D2EC /* libsqlite3.0.dylib */,
 				1D30AB110D05D00D00671497 /* Foundation.framework */,
+				A0FCB1A418EE511A008B8E13 /* XCTest.framework */,
+				A0FCB1A718EE511A008B8E13 /* UIKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -285,6 +294,25 @@
 				A0012DFB1893C3490097BDB0 /* FMResultSet.m */,
 			);
 			path = FMDatabase;
+			sourceTree = "<group>";
+		};
+		A0FCB1A918EE511A008B8E13 /* UnitTest Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A0FCB1AF18EE511A008B8E13 /* UnitTest_Tests.m */,
+				A0FCB1AA18EE511A008B8E13 /* Supporting Files */,
+			);
+			path = "UnitTest Tests";
+			sourceTree = "<group>";
+		};
+		A0FCB1AA18EE511A008B8E13 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				A0FCB1AB18EE511A008B8E13 /* UnitTest Tests-Info.plist */,
+				A0FCB1AC18EE511A008B8E13 /* InfoPlist.strings */,
+				A0FCB1B118EE511A008B8E13 /* UnitTest Tests-Prefix.pch */,
+			);
+			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -402,6 +430,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A0FCB1AC18EE511A008B8E13 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A0FCB1AD18EE511A008B8E13 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		00A1DD4E0EE91804007EC1A7 /* Debug */ = {
