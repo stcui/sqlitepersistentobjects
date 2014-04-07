@@ -54,7 +54,7 @@
 	Collections*	col = [[Collections alloc] init];
 	Collections*	database;
 	[col setFixtureData];
-	[col.stringsArray release];
+//	[col.stringsArray release];
 	col.stringsArray = nil;
 	
 	[col save];
